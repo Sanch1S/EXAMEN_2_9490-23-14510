@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "commonjs",
   "scripts": {
-    "dev": "echo \"Falló la inicialización ಥ_ಥ\" && exit 1"
+    "dev": "echo \"Falló la inicialización ಥ_ಥ\" && exit 1",
     "examen": "vite"
   },
   "dependencies": {
