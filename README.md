@@ -38,12 +38,12 @@ El proyecto base se encuentra en el siguiente repositorio:
 Debe clonar el repositorio:
 
 ```bash
-git clone [https://github.com/ingVillatoroUMG/ExamenParcial2DWB.git](https://github.com/ingVillatoroUMG/ExamenParcial2DWB.git)
+git clone https://github.com/ingVillatoroUMG/ExamenParcial2DWB.git
 
 Ingrese al directorio del proyecto:
 
 ```bash
-cd ExamenParcial1DWB
+cd ExamenParcial2DWB
 ```
 
 ---
