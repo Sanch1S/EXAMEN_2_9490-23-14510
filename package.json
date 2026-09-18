@@ -5,6 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "dev": "echo \"Falló la inicialización ಥ_ಥ\" && exit 1"
+    "examen": "vite"
   },
   "dependencies": {
     "react": "^19.1.1",
