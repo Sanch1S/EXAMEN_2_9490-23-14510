@@ -1,20 +1,19 @@
+import { useEffect, useReducer, useRef, useState } from 'react';
+import TemporizadorPromo from './TemporizadorPromo.jsx';
+import ComandaDetalle from './ComandaDetalle.jsx';
+
 const MENU_INICIAL = [
   { id: 'h1', nombre: 'Hamburguesa Doble', precio: 45 },
   { id: 'p1', nombre: 'Papas Supremas', precio: 20 },
   { id: 'b1', nombre: 'Bebida Mediana', precio: 12 },
 ];
 
-const facturasReducers = (state, action) => {
+const STORAGE_KEY = 'cierre_caja';
+
+const facturasReducer = (state, action) => {
   switch (action.type) {
     case 'GUARDAR_VENTA':
-      state.push({
-        idFactura: Math.floor(Math.random() * 100000),
-        items: action.payload.items,
-        total: action.payload.total,
-        emitidoEl: new Date().toLocaleTimeString()
-      });
-      localStorage.setItem('cierre_caja', JSON.stringify(state)); 
-      return state;
+      return [...state, action.payload];
 
     case 'REINICIAR_TURNO':
       return [];
@@ -24,40 +23,65 @@ const facturasReducers = (state, action) => {
   }
 };
 
+const cargarFacturas = () => {
+  try {
+    const guardado = localStorage.getItem(STORAGE_KEY);
+    return guardado ? JSON.parse(guardado) : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function TerminalPOS() {
   const [pedidoActual, setPedidoActual] = useState([]);
   const [turnoAbierto, setTurnoAbierto] = useState(true);
+  const [cierreCaja, dispatch] = useReducer(facturasReducer, [], cargarFacturas);
 
-  const [cierreCaja, dispatch] = useReducer(facturasReducer, []);
-  const montoCobradoVisualRef = useRef(0);
+  const siguienteLinea = useRef(1);
+
+  const total = pedidoActual.reduce((suma, item) => suma + item.precio, 0);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cierreCaja));
+  }, [cierreCaja]);
 
   const handleAgregarProducto = (producto) => {
-    pedidoActual.push(producto);
-    setPedidoActual(pedidoActual); 
+    const lineaId = siguienteLinea.current++;
+    setPedidoActual((prev) => [...prev, { ...producto, lineaId }]);
+  };
 
-    montoCobradoVisualRef.current += producto.precio;
+  const handleCortesia = (lineaId) => {
+    setPedidoActual((prev) =>
+      prev.map((item) => (item.lineaId === lineaId ? { ...item, precio: 0 } : item))
+    );
   };
 
   const handleCompletarOrden = () => {
     if (pedidoActual.length === 0) return;
 
+    const ultimoId = cierreCaja.length ? cierreCaja[cierreCaja.length - 1].idFactura : 0;
+
     dispatch({
       type: 'GUARDAR_VENTA',
       payload: {
+        idFactura: ultimoId + 1,
         items: pedidoActual,
-        total: montoCobradoVisualRef.current
-      }
+        total,
+        emitidoEl: new Date().toLocaleTimeString(),
+      },
     });
 
     setPedidoActual([]);
-    montoCobradoVisualRef.current = 0;
   };
 
   return (
     <div style={{ fontFamily: 'monospace', padding: '24px', maxWidth: '800px' }}>
-      <header style={{ borderBottom: '2px solid black', paddingBottom: '12px' }}>
+      <header style={{ borderBottom: '2px solid currentColor', paddingBottom: '12px' }}>
         <h2>Terminal POS: Estación #1</h2>
         <TemporizadorPromo activo={turnoAbierto} />
+        <button onClick={() => setTurnoAbierto((abierto) => !abierto)} style={{ marginTop: '8px' }}>
+          {turnoAbierto ? 'Pausar turno' : 'Reanudar turno'}
+        </button>
       </header>
 
       <section style={{ marginTop: '16px' }}>
@@ -75,7 +99,8 @@ export default function TerminalPOS() {
 
       <ComandaDetalle
         items={pedidoActual}
-        totalVisualRef={montoCobradoVisualRef}
+        total={total}
+        onCortesia={handleCortesia}
         onCobrarOrden={handleCompletarOrden}
       />
 
@@ -88,6 +113,7 @@ export default function TerminalPOS() {
             </li>
           ))}
         </ul>
+        <button onClick={() => dispatch({ type: 'REINICIAR_TURNO' })}>Reiniciar turno</button>
       </section>
     </div>
   );
